@@ -1,0 +1,62 @@
+import type { Tag } from '../tags/tags.types';
+import type {
+  applyTagsToDocuments as applyTagsToDocumentsUsecase,
+  createTag as createTagUsecase,
+} from '../tags/tags.usecases';
+import pLimit from 'p-limit';
+import type { AutoTaggingActions } from './auto-tagging.models';
+
+export function buildApplyAutoTaggingActions({
+  createTag,
+  applyTagsToDocuments,
+}: {
+  createTag: (
+    args: Pick<
+      Parameters<typeof createTagUsecase>[0],
+      'organizationId' | 'name' | 'description' | 'color'
+    >,
+  ) => ReturnType<typeof createTagUsecase>;
+  applyTagsToDocuments: (
+    args: Pick<
+      Parameters<typeof applyTagsToDocumentsUsecase>[0],
+      'documentIds' | 'addTagIds' | 'removeTagIds' | 'organizationId' | 'userId'
+    >,
+  ) => ReturnType<typeof applyTagsToDocumentsUsecase>;
+}) {
+  return async ({
+    documentId,
+    organizationId,
+    tagIdsToAdd,
+    tagsToCreate,
+  }: AutoTaggingActions & { documentId: string; organizationId: string }) => {
+    const limit = pLimit(5);
+
+    // TODO: introduce a createTags method with a new checkIfOrganizationCanCreateNewTag
+    const createdTagsResults = await Promise.allSettled(
+      tagsToCreate.map(async ({ name, description }) =>
+        limit(async () =>
+          createTag({
+            organizationId,
+            color: '#CCCCCC',
+            name,
+            description,
+          }),
+        ),
+      ),
+    );
+
+    const createdTags = createdTagsResults
+      .filter(
+        (result): result is PromiseFulfilledResult<{ tag: Tag }> => result.status === 'fulfilled',
+      )
+      .map((result) => result.value.tag);
+
+    await applyTagsToDocuments({
+      documentIds: [documentId],
+      addTagIds: [...tagIdsToAdd, ...createdTags.map((tag) => tag.id)],
+      removeTagIds: [],
+      organizationId,
+      userId: undefined,
+    });
+  };
+}

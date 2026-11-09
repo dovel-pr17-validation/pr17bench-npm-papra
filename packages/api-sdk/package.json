@@ -1,0 +1,55 @@
+{
+  "name": "@papra/api-sdk",
+  "version": "1.4.0",
+  "description": "Api SDK for Papra, the document archiving platform.",
+  "keywords": [
+    "api",
+    "archiving",
+    "document",
+    "papra",
+    "sdk",
+    "storage"
+  ],
+  "bugs": {
+    "url": "https://github.com/papra-hq/papra/issues"
+  },
+  "license": "AGPL-3.0-or-later",
+  "author": "Corentin Thomasset <corentinth@proton.me> (https://corentin.tech)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/papra-hq/papra",
+    "directory": "packages/api-sdk"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest watch",
+    "typecheck": "tsc --noEmit",
+    "build": "tsdown",
+    "build:watch": "tsdown --watch",
+    "dev": "pnpm build:watch",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@corentinth/chisels": "catalog:",
+    "ofetch": "catalog:",
+    "valibot": "catalog:"
+  },
+  "devDependencies": {
+    "@papra/app-server": "workspace:*",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "inlinedDependencies": {
+    "@papra/app-server": "0.0.0"
+  }
+}

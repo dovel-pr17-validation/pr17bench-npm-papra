@@ -1,0 +1,61 @@
+# Base stage with pnpm
+FROM node:26.12.1-slim@sha256:36793bcbb160a6a16cede1e62b93f84e26b78a972a8a4c0b879c1c12f22761ec AS base
+RUN npm install -g pnpm@12.4.2
+
+# Build stage
+FROM base AS build
+
+WORKDIR /app
+
+COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
+COPY apps/papra-client/package.json apps/papra-client/package.json
+COPY apps/papra-server/package.json apps/papra-server/package.json
+COPY packages/webhooks/package.json packages/webhooks/package.json
+COPY packages/lecture/package.json packages/lecture/package.json
+COPY packages/std/package.json packages/std/package.json
+COPY packages/search-parser/package.json packages/search-parser/package.json
+
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+COPY . .
+
+RUN pnpm --filter "@papra/app-client..." run build && \
+    pnpm --filter "@papra/app-server..." run build
+
+RUN pnpm --filter=@papra/app-server --prod deploy /prod/papra-server
+
+FROM base
+
+# Build arguments for version metadata
+ARG PAPRA_VERSION=dev
+ARG GIT_COMMIT=unknown
+ARG BUILD_DATE=unknown
+
+WORKDIR /app
+
+COPY --from=build /prod/papra-server ./
+COPY --from=build /app/apps/papra-client/dist ./public
+COPY pnpm-workspace.yaml ./
+
+EXPOSE 1221
+
+# Convert build args to environment variables for runtime
+ENV PAPRA_VERSION=${PAPRA_VERSION}
+ENV GIT_COMMIT=${GIT_COMMIT}
+ENV BUILD_DATE=${BUILD_DATE}
+
+ENV NODE_ENV=production
+ENV SERVER_SERVE_PUBLIC_DIR=true
+ENV DATABASE_URL=file:./app-data/db/db.sqlite
+ENV DOCUMENT_STORAGE_FILESYSTEM_ROOT=./app-data/documents
+ENV PAPRA_CONFIG_DIR=./app-data
+ENV EMAILS_DRY_RUN=true
+ENV CLIENT_BASE_URL=http://localhost:1221
+
+# Disable Better Auth telemetry
+ENV BETTER_AUTH_TELEMETRY=0
+
+RUN mkdir -p ./app-data/db ./app-data/documents ./ingestion
+
+CMD ["pnpm", "start:with-migrations"]

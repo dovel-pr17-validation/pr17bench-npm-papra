@@ -1,0 +1,32 @@
+{
+  "name": "@papra/root",
+  "version": "0.3.0",
+  "description": "Papra document management monorepo root",
+  "keywords": [],
+  "license": "AGPL-3.0-or-later",
+  "author": "Corentin Thomasset <corentinth@proton.me> (https://corentin.tech)",
+  "type": "module",
+  "scripts": {
+    "version": "changeset version && pnpm install --no-frozen-lockfile",
+    "changeset": "changeset",
+    "build:packages": "pnpm --filter './packages/*' --stream build",
+    "build:packages:watch": "pnpm --filter './packages/*' --stream build:watch",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "check": "oxlint && oxfmt --check",
+    "check:quiet": "oxlint --quiet && oxfmt --check",
+    "check:fix": "oxlint --fix && oxfmt",
+    "lint": "pnpm run check",
+    "lint:fix": "pnpm run check:fix"
+  },
+  "devDependencies": {
+    "@astrojs/compiler-rs": "0.5.2",
+    "@changesets/changelog-github": "1.0.0",
+    "@changesets/cli": "3.0.1",
+    "oxfmt": "0.74.0",
+    "oxlint": "1.89.0",
+    "oxlint-tsgolint": "7.0.2004",
+    "vitest": "catalog:"
+  },
+  "packageManager": "pnpm@12.4.2"
+}
